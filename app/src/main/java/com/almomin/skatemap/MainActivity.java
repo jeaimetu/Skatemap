@@ -1,7 +1,10 @@
 package com.almomin.skatemap;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.Manifest;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -25,6 +28,9 @@ public class MainActivity extends AppCompatActivity {
         WebSettings webSettings=mywebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         mywebView.loadUrl("https://skatemap.kr/");
+
+
+
     }
     public class MyWebViewClient extends WebViewClient {
         @Override
@@ -33,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         }
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            if ("www.example.com".equals(Uri.parse(url).getHost())) {
+            if ("skatemap.kr".equals(Uri.parse(url).getHost())) {
                 // This is my website, so do not override; let my WebView load the page
                 return false;
             }
