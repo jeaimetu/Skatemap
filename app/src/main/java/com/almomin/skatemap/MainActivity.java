@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.GeolocationPermissions;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -39,14 +41,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         myWebView =findViewById(R.id.webview);
+
         myWebView.setWebViewClient(new MyWebViewClient());
+        myWebView.setWebChromeClient(new MyWebChromeClient());
         myWebView.getSettings().setTextZoom(100);
-        WebSettings webSettings= myWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
+        myWebView.getSettings().setGeolocationEnabled(true);
+        myWebView.getSettings().setJavaScriptEnabled(true);
+
         myWebView.loadUrl("https://skatemap.kr/");
-
-
-
     }
 
     @Override
@@ -71,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view,url,favicon);
         }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             if ("skatemap.kr".equals(Uri.parse(url).getHost())) {
@@ -83,6 +86,15 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
     }
+
+    public class MyWebChromeClient extends WebChromeClient {
+        @Override
+        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+            super.onGeolocationPermissionsShowPrompt(origin, callback);
+            callback.invoke(origin, true, false);
+        }
+    }
+    
     @Override
     public void onBackPressed() {
         if (myWebView.canGoBack()) {
