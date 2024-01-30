@@ -244,6 +244,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
 
+
                 val chooserIntent = Intent(Intent.ACTION_CHOOSER)
                 chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent)
                 chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser")
@@ -258,6 +259,13 @@ class MainActivity : AppCompatActivity() {
         myWebView.loadUrl("https://skatemap.kr/skatemap%202.0.html")
     }
 
+    private fun requestPermission() {
+        ActivityCompat.requestPermissions(
+            this, arrayOf<String>(Manifest.permission.CAMERA),
+            REQUEST_CAMERA_PERMISSION_CODE
+        )
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>,
         grantResults: IntArray
@@ -268,7 +276,7 @@ class MainActivity : AppCompatActivity() {
                 if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     if (ContextCompat.checkSelfPermission(
                             this@MainActivity,
-                            Manifest.permission.ACCESS_FINE_LOCATION
+                            Manifest.permission.ACCESS_FINE_LOCATION,
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
                         Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
