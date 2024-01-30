@@ -148,10 +148,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         //request location permission
-        if (ContextCompat.checkSelfPermission(
+        if ((ContextCompat.checkSelfPermission(
                 this@MainActivity,
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+            ) != PackageManager.PERMISSION_GRANTED) ||
+                    (ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.CAMERA
+                    ) != PackageManager.PERMISSION_GRANTED)
         ) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(
                     this@MainActivity,
@@ -160,17 +164,20 @@ class MainActivity : AppCompatActivity() {
             ) {
                 ActivityCompat.requestPermissions(
                     this@MainActivity,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.CAMERA),
                     1
                 )
             } else {
                 ActivityCompat.requestPermissions(
                     this@MainActivity,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.CAMERA),
                     1
                 )
             }
         }
+
         myWebView = findViewById(R.id.webview)
         myWebView.webViewClient = MyWebViewClient()
         myWebView.setWebViewClient(MyWebViewClient())
