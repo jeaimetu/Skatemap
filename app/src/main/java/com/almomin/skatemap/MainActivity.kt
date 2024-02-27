@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.view.WindowManager
+import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -21,6 +23,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -36,7 +39,7 @@ class MainActivity : AppCompatActivity() {
          * Request code for onActivityResult for when the user wants to pick an image
          * in the WebFragment
          */
-        const val RESULT_OK = 1
+        const val RESULT_OK = 0
     }
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
@@ -62,85 +65,96 @@ class MainActivity : AppCompatActivity() {
 
     private val fileUploadActivityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            Log.d("MYWEB", "fileUploadActivityResultLauncher is called ${result.resultCode}")
+            Log.d("MYWEB", "fileUploadActivityResultLauncher(rst code) ${result.resultCode}")
+            val intent = result.data
+            val action = intent?.action
+            var results: Array<Uri>? = emptyArray()
+
+
+            Log.e("MYWEB","result is ${Activity.RESULT_OK}")
             if (result.resultCode == Activity.RESULT_OK) {
-                Log.d("MYWEB", "fileUploadActivityResultLauncher success case")
 
-                val resultIntent = result.data as Intent
-                val action = resultIntent.action
-                val extra = resultIntent.extras
-                Log.d("MYWEB", "action = $action extra = $extra")
+                //var results: Array<Uri>? = null
 
-                // check the value of mCameraPhotoPath
-                if (mCameraPhotoPath != null) {
-                    Log.d("MYWEB", "mCameraPhotoPath $mCameraPhotoPath")
-                } else {
-                    Log.d("MYWEB", "mCameraPhotoPath is null")
-                }
+                if (intent?.data != null || intent?.clipData != null) { // file picker case
+                    // File picker case
+                    Log.d("MYWEB", "FILE Picker case")
 
-                var results: Array<Uri>? = null
-                if (action != null) {
-                    Log.d("MYWEB", "Taking a photo case")
-                    if (mCameraPhotoPath != null) {
-                        Log.d("MYWEB", "mCameraPhotoPath is not null")
-                        //parse intent extra
 
-                        results = arrayOf(Uri.parse(mCameraPhotoPath))
+                    val clipData = intent?.clipData
+
+                    if (clipData != null) {
+                        Log.d("MYWEB", "clipdata is not null and only one picking")
+                        Log.d("MYWEB", "clipData = $clipData and numbers ${clipData.itemCount}")
+                        for (i in 0 until clipData.itemCount) {
+                            val item = clipData?.getItemAt(i)
+                            if (item != null) {
+                                Log.d("MYWEB", "index $i is not null and uri = ${item!!.uri}")
+                                results = results?.plus(item.uri)
+                                Log.d(
+                                    "MYWEB",
+                                    "results = ${
+                                        results?.get(0).toString()
+                                    } and length ${results?.size}"
+                                )
+                            } else {
+                                Log.d("MYWEB", "index $i item is null")
+                            }
+
+                        }
+
+                    } else {
+                        Log.d("MYWEB", "clipdata is null and only one picking")
+                        results = result.data?.let {
+                            WebChromeClient.FileChooserParams.parseResult(
+                                result.resultCode,
+                                it
+                            )
+                        }
                     }
-                    val intentExtra: String? = resultIntent.dataString
-                    for (key in resultIntent.extras!!.keySet()) {
-                        Log.d("MYWEB", "Key set $key")
-                    }
-                    val pathData: String? = resultIntent.extras!!.getString("data")
-                    Log.d("MYWEB", "Path Data $pathData")
-                    Log.d("MYWEB", "intentExtra $intentExtra")
-                } else {
-                    Log.d("MYWEB", "File picker case")
-                    //check photopath
-                    Log.d("MYWEB", "data string ${result.data.toString()}")
-                    val results = result.data?.let {
-                        WebChromeClient.FileChooserParams.parseResult(
-                            result.resultCode,
-                            it
-                        )
-                    }
+
+
+                    // Print the Uri parsed result
+                    Log.d(
+                        "MYWEB",
+                        "results = ${results?.get(0).toString()} and length ${results?.size}"
+                    )
+
                     fileUploadCallback?.onReceiveValue(results)
+
+                } else {
+                    //Camera case
+                    Log.d("MYWEB", "CAMERA case")
+
+                    results = arrayOf(mCameraPhotoPath!!.toUri())
+
+
+                    Log.d(
+                        "MYWEB",
+                        "results = ${results?.get(0).toString()} and length ${results?.size}"
+                    )
+
+                    fileUploadCallback?.onReceiveValue(results)
+
                 }
 
-                mFilePathCallback?.onReceiveValue(results)
-                mFilePathCallback = null
 
 
             } else {
-                Log.d("MYWEB", "fileUploadActivityResultLauncher take photo case")
-
-                // check the value of mCameraPathCallBack
-                if (mCameraPhotoPath != null) {
-                    Log.d("MYWEB", "mCameraPhotoPath $mCameraPhotoPath")
-                } else {
-                    Log.d("MYWEB", "mCameraPhotoPath is null")
-                }
-
-                val dataString: String = result.data.toString()
-                var results: Array<Uri>? = null
-                if (dataString != null) {
-
-                    Log.d("MYWEB", "dataString is not null")
-                    results = arrayOf(Uri.fromFile(File(mCameraPhotoPath?.substring(7))))
-                }
-
-                results = arrayOf(Uri.fromFile(File(mCameraPhotoPath?.substring(7))))
-
-
-
-                Log.d("MYWEB", "take photo results " + results.get(0).toString())
+                Log.d("MYWEB", "Cancel case, do Nothing")
                 fileUploadCallback?.onReceiveValue(results)
-                mFilePathCallback?.onReceiveValue(results)
             }
-            Log.d("MYWEB", "fileUploadActivityResultLauncher always called")
-            fileUploadCallback = null
+
+            Log.d("MYWEB", "Action: ${intent?.action}")
+            Log.d("MYWEB", "Data: ${intent?.data}")
+            Log.d("MYWEB", "Categories: ${intent?.categories}")
+            Log.d("MYWEB", "Flags: ${intent?.flags}")
+            Log.d("MYWEB", "Component: ${intent?.component}")
+            Log.d("MYWEB", "Extra: ${intent?.extras}")
+            Log.d("MYWEB", "ClipData: ${intent?.clipData}")
 
             return@registerForActivityResult
+
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -193,6 +207,14 @@ class MainActivity : AppCompatActivity() {
         // Enable file upload from the WebView
         myWebView.webChromeClient = object : WebChromeClient() {
 
+
+            override fun onGeolocationPermissionsShowPrompt(
+                origin: String?,
+                callback: GeolocationPermissions.Callback
+            ) {
+                super.onGeolocationPermissionsShowPrompt(origin, callback)
+                callback.invoke(origin, true, false)
+            }
 
             override fun onShowFileChooser(
                 webView: WebView?,
@@ -251,7 +273,6 @@ class MainActivity : AppCompatActivity() {
                 }
 
 
-
                 val chooserIntent = Intent(Intent.ACTION_CHOOSER)
                 chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent)
                 chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser")
@@ -262,7 +283,11 @@ class MainActivity : AppCompatActivity() {
                 fileUploadActivityResultLauncher.launch(chooserIntent)
                 return true
             }
+
         }
+
+        //make status bar and navigation bar transparent
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         myWebView.loadUrl("https://skatemap.kr/skatemap%202.0.html")
     }
 
@@ -325,18 +350,18 @@ class MainActivity : AppCompatActivity() {
             // Handle downloads from the WebView
             val url = request?.url.toString()
 
-            Log.d("MYWEB", "shouldInterceptRequest called $url")
+            //Log.d("MYWEB", "shouldInterceptRequest called $url")
             if (url.endsWith(".jpg") || url.endsWith(".gif") || url.endsWith(".png") || url.endsWith(".jpeg")
             ) {
                 val connection = URL(url).openConnection() as HttpURLConnection
                 connection.connect()
 
                 return if (connection.responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-                    Log.e("MYWEB", "Image not found $url")
+                    //Log.e("MYWEB", "Image not found $url")
                     WebResourceResponse("image/*", "UTF-8", null)
                 } else {
                     val inputStream = connection.inputStream
-                    Log.e("MYWEB", "Image found $url")
+                    //Log.e("MYWEB", "Image found $url")
                     WebResourceResponse("image/*", "UTF-8", inputStream)
                 }
 
