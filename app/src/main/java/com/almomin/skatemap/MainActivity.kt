@@ -6,10 +6,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Window
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
@@ -24,6 +28,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -159,7 +164,32 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+
+
+
+
+
         setContentView(R.layout.activity_main)
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+            val controller = window.insetsController
+            if (controller != null){
+                controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            window.setFlags(
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN
+            )
+            )
+        }
+
+
+
 
         //request location permission
         if ((ContextCompat.checkSelfPermission(
@@ -182,12 +212,23 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.CAMERA),
                     1
                 )
+
+                ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),
+                        1
+                )
             } else {
                 ActivityCompat.requestPermissions(
                     this@MainActivity,
                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.CAMERA),
                     1
+                )
+                ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),
+                        1
                 )
             }
         }
@@ -263,6 +304,8 @@ class MainActivity : AppCompatActivity() {
 
                 val contentSelectionIntent = Intent(Intent.ACTION_GET_CONTENT)
                 contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE)
+                /// 여러개의 이미지를 선택하게 해준다.
+                contentSelectionIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                 contentSelectionIntent.type = "image/*"
 
                 val intentArray: Array<Intent?>
@@ -286,8 +329,11 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        //make status bar and navigation bar transparent
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        /// make status bar and navigation bar transparent
+        /// getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+
+
         myWebView.loadUrl("https://skatemap.kr/skatemap%202.0.html")
     }
 
