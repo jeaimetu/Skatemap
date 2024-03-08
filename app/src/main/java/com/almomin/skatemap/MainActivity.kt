@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
                                     Log.d(
                                             "MYWEB",
                                             "results = ${
-                                                results?.get(0).toString()
+                                                results?.get(i).toString()
                                             } and length ${results?.size}"
                                     )
                                 } else {
@@ -235,8 +235,9 @@ class MainActivity : AppCompatActivity() {
 
         myWebView.webViewClient = MyWebViewClient()
         //myWebView.setWebViewClient(MyWebViewClient())
-        myWebView.getSettings().textZoom = 100
+
         val webSettings = myWebView.getSettings()
+        webSettings.textZoom = 100
         webSettings.javaScriptEnabled = true
 
 
@@ -353,7 +354,7 @@ class MainActivity : AppCompatActivity() {
         /// getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
 
-        myWebView.loadUrl("https://skatemap.kr/skatemap%202.0.html")
+        myWebView.loadUrl("https://oldjeans.io/peed/news_oldjeans_corp.html")
     }
 
     private fun requestPermission() {
@@ -398,10 +399,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
-            if ("skatemap.kr" == Uri.parse(url).host) {
+            if ("oldjeans.io" == Uri.parse(url).host) {
                 // This is my website, so do not override; let my WebView load the page
-                Log.d("MYWEB", "skatemap host case")
+                Log.d("MYWEB", "${Uri.parse(url).host} host case")
                 return false
+            } else {
+                Log.d("MYWEB", "Another host ${Uri.parse(url).host}")
             }
 
             if (url.startsWith("https://firebasestorage.googleapis.com")) {
