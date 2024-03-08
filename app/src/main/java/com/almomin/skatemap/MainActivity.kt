@@ -73,7 +73,9 @@ class MainActivity : AppCompatActivity() {
                 var results: Array<Uri>? = emptyArray()
 
 
+
                 Log.e("MYWEB", "result is ${Activity.RESULT_OK}")
+                Log.d("MYWEB", "javascript enabled ${myWebView.getSettings().javaScriptEnabled}")
                 if (result.resultCode == Activity.RESULT_OK) {
 
                     //var results: Array<Uri>? = null
@@ -123,7 +125,7 @@ class MainActivity : AppCompatActivity() {
                         )
 
                         fileUploadCallback?.onReceiveValue(results)
-                        fileUploadCallback = null
+                        //fileUploadCallback = null
 
                     } else {
                         //Camera case
@@ -138,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                         )
 
                         fileUploadCallback?.onReceiveValue(results)
-                        fileUploadCallback = null
+                        //fileUploadCallback = null
 
                     }
 
@@ -146,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Log.d("MYWEB", "Cancel case, do Nothing")
                     fileUploadCallback?.onReceiveValue(results)
-                    fileUploadCallback = null
+                    //fileUploadCallback = null
                 }
 
                 Log.d("MYWEB", "Action: ${intent?.action}")
