@@ -121,11 +121,11 @@ class MainActivity : AppCompatActivity() {
                         // Print the Uri parsed result
                         Log.d(
                                 "MYWEB",
-                                "results = ${results?.get(0).toString()} and length ${results?.size}"
+                                "results = ${results?.get(0).toString()} ${results?.get(1).toString()}  ${results?.get(2).toString()} and length ${results?.size}"
                         )
 
                         fileUploadCallback?.onReceiveValue(results)
-                        //fileUploadCallback = null
+                        fileUploadCallback = null
 
                     } else {
                         //Camera case
@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                         )
 
                         fileUploadCallback?.onReceiveValue(results)
-                        //fileUploadCallback = null
+                        fileUploadCallback = null
 
                     }
 
@@ -148,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Log.d("MYWEB", "Cancel case, do Nothing")
                     fileUploadCallback?.onReceiveValue(results)
-                    //fileUploadCallback = null
+                    fileUploadCallback = null
                 }
 
                 Log.d("MYWEB", "Action: ${intent?.action}")
