@@ -3,9 +3,11 @@ package com.almomin.skatemap
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -18,6 +20,7 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JsResult
+import android.webkit.MimeTypeMap
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -31,13 +34,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import com.google.android.material.snackbar.Snackbar
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var myWebView: WebView
@@ -95,6 +103,21 @@ class MainActivity : AppCompatActivity() {
 
     // private var mFilePathCallback: ValueCallback<Array<Uri>>? = null
 
+    private fun getRealPathFromURI(context: Context, contentUri: Uri?): String? {
+        var cursor: Cursor? = null
+        return try {
+            val proj =
+                arrayOf(MediaStore.Images.Media.DATA)
+            cursor = context.contentResolver.query(contentUri!!, proj, null, null, null)
+            cursor!!.moveToFirst()
+            val column_index = cursor.getColumnIndex(proj[0])
+
+            cursor.getString(column_index)
+        } finally {
+            cursor?.close()
+        }
+    }
+
     @Throws(IOException::class)
     private fun createImageFile(): File? {
         // Create an image file name
@@ -108,6 +131,50 @@ class MainActivity : AppCompatActivity() {
             ".jpg",  /* suffix */
             storageDir /* directory */
         )
+    }
+
+    private fun fileFromContentUri(context: Context, contentUri: Uri, idx: Int): File {
+
+        val fileExtension = getFileExtension(context, contentUri)
+        val fileName = "temporary_file" + idx.toString() + if (fileExtension != null) ".$fileExtension" else ""
+
+        val tempFile = File(context.cacheDir, fileName)
+        tempFile.createNewFile()
+
+        try {
+            val oStream = FileOutputStream(tempFile)
+            val inputStream = context.contentResolver.openInputStream(contentUri)
+
+            inputStream?.let {
+                copy(inputStream, oStream)
+            }
+
+            oStream.flush()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return tempFile
+    }
+
+    private fun getFileExtension(context: Context, uri: Uri): String? {
+        val fileType: String? = context.contentResolver.getType(uri)
+        return MimeTypeMap.getSingleton().getExtensionFromMimeType(fileType)
+    }
+
+    @Throws(IOException::class)
+    private fun copy(source: InputStream, target: OutputStream) {
+        val buf = ByteArray(8192)
+        var length: Int
+        while (source.read(buf).also { length = it } > 0) {
+            target.write(buf, 0, length)
+        }
+    }
+    private fun takePersistableUriPermission(uri: Uri){
+        val takeFlags =
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+
+        contentResolver.takePersistableUriPermission(uri, takeFlags)
     }
 
     private val fileUploadActivityResultLauncher =
@@ -139,8 +206,11 @@ class MainActivity : AppCompatActivity() {
                             val item = clipData.getItemAt(i)
                             if (item != null) {
                                 Log.d("MYWEB", "index $i is not null and uri = ${item.uri}")
-                                results = results?.plus(item.uri)
-                                //results = arrayOf(Uri.parse(clipData.toString()))
+                                //results = results?.plus(item.uri)
+                                // 파일을 복사하고, 그 파일의 Uri를 넘겨준다.
+                                val copiedUri = fileFromContentUri(applicationContext, item.uri, i).toUri()
+                                results = results?.plus(copiedUri)
+
                                 Log.d(
                                     "MYWEB",
                                     "results = ${
@@ -177,13 +247,14 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     fileUploadCallback?.onReceiveValue(results)
-                    fileUploadCallback = null
+                    //fileUploadCallback = null
 
                 } else {
                     //Camera case
                     Log.d("MYWEB", "CAMERA case")
 
                     results = arrayOf(mCameraPhotoPath!!.toUri())
+                    Log.d("MYWEB", "mCameraPhotoPath = ${mCameraPhotoPath} and Uri = ${mCameraPhotoPath!!.toUri()}")
 
 
                     Log.d(
@@ -192,7 +263,7 @@ class MainActivity : AppCompatActivity() {
                     )
 
                     fileUploadCallback?.onReceiveValue(results)
-                    fileUploadCallback = null
+                    //fileUploadCallback = null
 
                 }
 
@@ -200,7 +271,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Log.d("MYWEB", "Cancel case, do Nothing")
                 fileUploadCallback?.onReceiveValue(results)
-                fileUploadCallback = null
+                //fileUploadCallback = null
             }
 
             Log.d("MYWEB", "Action: ${intent?.action}")
@@ -497,6 +568,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+            Log.d("MYWEB", "on shouldOverrideUrlLoading")
+
             if ("oldjeans.io" == Uri.parse(url).host) {
                 // This is my website, so do not override; let my WebView load the page
                 Log.d("MYWEB", "${Uri.parse(url).host} host case")
@@ -524,8 +597,11 @@ class MainActivity : AppCompatActivity() {
             request: WebResourceRequest?
         ): WebResourceResponse? {
             // Handle downloads from the WebView
+            // Log.d("MYWEB", "on shouldInterceptRequest" + request?.requestHeaders.toString())
             return super.shouldInterceptRequest(view, request)
         }
+
+
     }
 
     override fun onBackPressed() {
