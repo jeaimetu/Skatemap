@@ -578,6 +578,14 @@ class MainActivity : AppCompatActivity() {
                 Log.d("MYWEB", "Another host ${Uri.parse(url).host}")
             }
 
+            if ("oldjeanscorp.firebaseapp.com" == Uri.parse(url).host) {
+                Log.d("MYWEB", "${Uri.parse(url).host} host case")
+                return false
+            } else {
+                Log.d("MYWEB", "Another host ${Uri.parse(url).host}")
+            }
+                
+
             if (url.startsWith("https://firebasestorage.googleapis.com")) {
                 // Handle the request yourself, potentially fetching and displaying the resource manually
                 // (This approach involves complex logic and security considerations beyond this scope)
